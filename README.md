@@ -1,5 +1,13 @@
 # MouseTrap
 
-Simple Program that allows to lock the mouse onto the primary screen in a multi-monitor setup. Useful if streaming or playing a game on a separate monitor.
+This is a simple program that will lock a cursor to your primary monitor. Useful for when streaming or playing games on a separate screen.
+Works only for Windows.
 
-Only works for Windows. Will require to Run as Administrator
+### Download
+
+Go to releases on the right and download MouseTrap.exe. 
+
+### Usage
+
+Right click the .exe and select "Run as Administrator".
+When finished, use Windows Task Manager to end the process.
