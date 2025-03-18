@@ -1,0 +1,12 @@
+MouseTrap.exe: MouseTrap.obj Makefile
+	link /nologo /ENTRY:main /NODEFAULTLIB /SUBSYSTEM:WINDOWS MouseTrap.obj user32.lib kernel32.lib
+	del /q MouseTrap.obj
+
+MouseTrap.obj: MouseTrap.cpp
+	cl /nologo /c /O1 /GS- MouseTrap.cpp
+
+debug:
+	cl -DDEBUG MouseTrap.cpp user32.lib
+
+clean:
+	del /q MouseTrap.obj MouseTrap.exe
