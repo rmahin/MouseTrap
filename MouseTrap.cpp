@@ -159,29 +159,32 @@ void CreateTrayIcon(HWND hwnd) {
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_USER_SHELLICON;
 
-    // Try loading from .ico file directly if resource approach isn't working
+    // Try loading the icon using the same technique that works locally
     nid.hIcon = (HICON)LoadImage(
-        NULL,               // No instance handle needed for file
-        "mouse.ico",          // File name - use the actual name of your .ico file
-        IMAGE_ICON,         // Type of image
-        16, 16,             // Desired width and height
-        LR_LOADFROMFILE     // Load from file rather than resource
+        GetModuleHandle(NULL),       // Use current module for resource
+        MAKEINTRESOURCE(IDI_TRAYICON),
+        IMAGE_ICON,
+        16, 16,                      // Force 16x16 for tray icon
+        LR_DEFAULTCOLOR
     );
 
-    // Fall back to system icon if our icon failed to load
+    // If resource loading fails, try direct file loading
     if (!nid.hIcon) {
-        // Try resource loading as backup
-        nid.hIcon = LoadAppIcon(GetModuleHandle(NULL), 16);
-
-        // If that still fails, use system icon
-        if (!nid.hIcon) {
-            nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-        }
+        nid.hIcon = (HICON)LoadImage(
+            NULL,
+            "mouse.ico",
+            IMAGE_ICON,
+            16, 16,
+            LR_LOADFROMFILE
+        );
     }
 
-    // Use our safe string copy
-    my_strcpy(nid.szTip, "MouseTrap (Enabled)");
+    // Last resort fallback
+    if (!nid.hIcon) {
+        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
 
+    my_strcpy(nid.szTip, "MouseTrap (Enabled)");
     Shell_NotifyIcon(NIM_ADD, &nid);
 }
 
@@ -205,16 +208,27 @@ void ToggleConfinement(HWND hwnd) {
     nid.uID = 1;
     nid.uFlags = NIF_TIP | NIF_ICON;  // Also update the icon
 
-    // Load icon directly from file - same method as in CreateTrayIcon
+    // Use exactly the same loading technique as in CreateTrayIcon
     nid.hIcon = (HICON)LoadImage(
-        NULL,               // No instance handle needed for file
-        "mouse.ico",          // File name - use the actual name of your .ico file
-        IMAGE_ICON,         // Type of image
-        16, 16,             // Desired width and height
-        LR_LOADFROMFILE     // Load from file rather than resource
+        GetModuleHandle(NULL),       // Use current module for resource
+        MAKEINTRESOURCE(IDI_TRAYICON),
+        IMAGE_ICON,
+        16, 16,                      // Force 16x16 for tray icon
+        LR_DEFAULTCOLOR
     );
 
-    // Fall back to system icon if our icon failed to load
+    // If resource loading fails, try direct file loading
+    if (!nid.hIcon) {
+        nid.hIcon = (HICON)LoadImage(
+            NULL,
+            "mouse.ico",
+            IMAGE_ICON,
+            16, 16,
+            LR_LOADFROMFILE
+        );
+    }
+
+    // Last resort fallback
     if (!nid.hIcon) {
         nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     }
@@ -230,6 +244,7 @@ void ToggleConfinement(HWND hwnd) {
 
     Shell_NotifyIcon(NIM_MODIFY, &nid);
 }
+
 
 // Window procedure
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
