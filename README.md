@@ -9,5 +9,9 @@ Go to releases on the right and download MouseTrap.exe.
 
 ### Usage
 
-Right click the .exe and select "Run as Administrator".
-When finished, use Windows Task Manager to end the process.
+Right click the .exe and select "Run as Administrator". MouseTrap should now be working.
+
+To toggle On/Off, open your Taskbar's System Tray. There will be an icon for MouseTrap. Simply click on it.
+Alternatively, you can use the Hotkey Ctrl + Alt + C.
+
+To end the process altogether, use Windows Task Manager and end the MouseTrap process.
