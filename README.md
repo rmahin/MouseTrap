@@ -5,7 +5,11 @@ Works only for Windows.
 
 ### Download
 
-Go to releases on the right and download MouseTrap.exe. 
+Download Link:
+https://github.com/rmahin/MouseTrap/releases/download/v2.1.0/MouseTrap.exe
+
+Some security programs may block the above download due to cursor control. If so, please try this release:
+https://github.com/rmahin/MouseTrap/releases/download/v2.1.0/MouseTrap_b.exe
 
 ### Usage
 
@@ -14,4 +18,4 @@ Right click the .exe and select "Run as Administrator". The program should now b
 To toggle On/Off, open your Taskbar's System Tray. There will be an icon for MouseTrap. Simply click on it.
 Alternatively, you can use the Hotkey Ctrl + Alt + C.
 
-To end the process, use Windows Task Manager to end the task.
+When finished, use Windows Task Manager to end the process.
