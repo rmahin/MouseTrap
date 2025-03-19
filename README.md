@@ -13,7 +13,7 @@ https://github.com/rmahin/MouseTrap/releases/download/v2.1.0/MouseTrap_b.exe
 
 ### Usage
 
-Right click the .exe and select "Run as Administrator". The program should now be working.
+Just run the application. The program should now be working. If not, you may need to run as administrator.
 
 To toggle On/Off, open your Taskbar's System Tray. There will be an icon for MouseTrap. Simply click on it.
 Alternatively, you can use the Hotkey Ctrl + Alt + C.
