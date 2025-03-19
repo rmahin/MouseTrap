@@ -1,12 +1,15 @@
-MouseTrap.exe: MouseTrap.obj Makefile
-	link /nologo /ENTRY:main /NODEFAULTLIB /SUBSYSTEM:WINDOWS MouseTrap.obj user32.lib kernel32.lib
-	del /q MouseTrap.obj
+all: MouseTrap.exe
 
-MouseTrap.obj: MouseTrap.cpp
+MouseTrap.res: MouseTrap.rc resource.h
+	rc /nologo MouseTrap.rc
+
+MouseTrap.obj: MouseTrap.cpp resource.h
 	cl /nologo /c /O1 /GS- MouseTrap.cpp
 
-debug:
-	cl -DDEBUG MouseTrap.cpp user32.lib
+MouseTrap.exe: MouseTrap.obj MouseTrap.res
+	link /nologo /ENTRY:main /NODEFAULTLIB /SUBSYSTEM:WINDOWS MouseTrap.obj MouseTrap.res user32.lib kernel32.lib shell32.lib
+	del *.obj
+	del *.res
 
 clean:
-	del /q MouseTrap.obj MouseTrap.exe
+	del *.obj *.res *.exe
