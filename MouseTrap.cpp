@@ -1,4 +1,5 @@
 #include <windows.h>
+#include "resource.h"  // For icon resource IDs
 
 // Global variables
 RECT primaryMonRect = { 0 };
@@ -7,6 +8,9 @@ HANDLE g_hThread = NULL;
 volatile BOOL g_bRunning = TRUE;
 volatile BOOL g_bConfineEnabled = TRUE;
 DWORD g_dwThreadId = 0;
+
+// Padding in pixels to prevent edge clipping
+#define RIGHT_PADDING 4
 
 // Define constants for shell notification
 #define WM_USER_SHELLICON (WM_USER + 1)
@@ -40,8 +44,9 @@ void RemoveTrayIcon(HWND hwnd);
 BOOL Shell_NotifyIcon(DWORD dwMessage, MY_NOTIFYICONDATA* lpData);
 BOOL StartConfinerThread();
 void StopConfinerThread();
+HICON LoadAppIcon(HINSTANCE hInstance, int size);  // Forward declaration for LoadAppIcon
 
-// strcpy for strings implementation
+// Our implementation of strcpy for strings
 void my_strcpy(char* dest, const char* src) {
     while (*src) {
         *dest++ = *src++;
@@ -49,18 +54,46 @@ void my_strcpy(char* dest, const char* src) {
     *dest = '\0';
 }
 
-// Threaded mouse confinement
-DWORD WINAPI MouseConfinerThread(LPVOID lpParam) {
-    // Apply initial boundary
-    ClipCursor(&primaryMonRect);
+// Helper function to load our custom icon consistently
+HICON LoadAppIcon(HINSTANCE hInstance, int size) {
+    HICON hIcon = (HICON)LoadImage(
+        hInstance,
+        MAKEINTRESOURCE(IDI_TRAYICON),
+        IMAGE_ICON,
+        size,  // Width
+        size,  // Height
+        LR_DEFAULTCOLOR
+    );
 
-    // Keep applying the boundary while running
+    // Fall back to system icon if our icon failed to load
+    if (!hIcon) {
+        hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
+
+    return hIcon;
+}
+
+// Thread for mouse confinement
+DWORD WINAPI MouseConfinerThread(LPVOID lpParam) {
+    // Create a padded boundary for ClipCursor
+    RECT paddedRect = primaryMonRect;
+    paddedRect.right -= RIGHT_PADDING;  // Add padding on right side
+
+    // Apply initial boundary
+    ClipCursor(&paddedRect);
+
+    // Keep applying the boundary while thread is running
     while (g_bRunning) {
-        ClipCursor(&primaryMonRect);
+        if (g_bConfineEnabled) {
+            ClipCursor(&paddedRect);
+        }
+        else {
+            ClipCursor(NULL);
+        }
         Sleep(100);
     }
 
-    // Remove restriction before exiting
+    // Make sure to remove restriction before exiting
     ClipCursor(NULL);
     return 0;
 }
@@ -107,12 +140,12 @@ ATOM RegisterAppWindowClass(HINSTANCE hInstance) {
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = hInstance;
-    wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wcex.hIcon = LoadAppIcon(hInstance, 32);      // Standard size for application
     wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = NULL;
     wcex.lpszClassName = "MouseConfinerClass";
-    wcex.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    wcex.hIconSm = LoadAppIcon(hInstance, 16);    // Small icon size
 
     return RegisterClassEx(&wcex);
 }
@@ -125,7 +158,26 @@ void CreateTrayIcon(HWND hwnd) {
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_USER_SHELLICON;
-    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+
+    // Try loading from .ico file directly if resource approach isn't working
+    nid.hIcon = (HICON)LoadImage(
+        NULL,               // No instance handle needed for file
+        "mouse.ico",          // File name - use the actual name of your .ico file
+        IMAGE_ICON,         // Type of image
+        16, 16,             // Desired width and height
+        LR_LOADFROMFILE     // Load from file rather than resource
+    );
+
+    // Fall back to system icon if our icon failed to load
+    if (!nid.hIcon) {
+        // Try resource loading as backup
+        nid.hIcon = LoadAppIcon(GetModuleHandle(NULL), 16);
+
+        // If that still fails, use system icon
+        if (!nid.hIcon) {
+            nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        }
+    }
 
     // Use our safe string copy
     my_strcpy(nid.szTip, "MouseTrap (Enabled)");
@@ -151,18 +203,28 @@ void ToggleConfinement(HWND hwnd) {
     nid.cbSize = sizeof(MY_NOTIFYICONDATA);
     nid.hWnd = hwnd;
     nid.uID = 1;
-    nid.uFlags = NIF_TIP;
+    nid.uFlags = NIF_TIP | NIF_ICON;  // Also update the icon
+
+    // Load icon directly from file - same method as in CreateTrayIcon
+    nid.hIcon = (HICON)LoadImage(
+        NULL,               // No instance handle needed for file
+        "mouse.ico",          // File name - use the actual name of your .ico file
+        IMAGE_ICON,         // Type of image
+        16, 16,             // Desired width and height
+        LR_LOADFROMFILE     // Load from file rather than resource
+    );
+
+    // Fall back to system icon if our icon failed to load
+    if (!nid.hIcon) {
+        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
 
     if (g_bConfineEnabled) {
         my_strcpy(nid.szTip, "MouseTrap (Enabled)");
-
-        // Start the thread when enabled
         StartConfinerThread();
     }
     else {
         my_strcpy(nid.szTip, "MouseTrap (Disabled)");
-
-        // Stop the thread when disabled
         StopConfinerThread();
     }
 
@@ -265,7 +327,7 @@ int main() {
     return (int)msg.wParam;
 }
 
-// Our own implementation of Shell_NotifyIcon for linking purposes
+// Shell_NotifyIcon implementation for linking purposes
 BOOL Shell_NotifyIcon(DWORD dwMessage, MY_NOTIFYICONDATA* lpData) {
     // Get the function address from shell32.dll
     static BOOL(WINAPI * pfnShell_NotifyIconA)(DWORD, void*) = NULL;
